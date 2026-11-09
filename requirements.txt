@@ -1,0 +1,29 @@
+# Runtime dependencies, pinned exactly (checked on PyPI on 2026-10-01).
+# Direct dependencies:
+apscheduler==3.11.3
+httpx==0.28.1
+pydantic-settings==2.15.0
+tenacity==9.1.4
+typer==0.27.2
+# Pulled in by the packages above:
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.15.1
+certifi==2026.7.22
+h11==0.16.0
+httpcore==1.0.9
+idna==3.20
+markdown-it-py==4.2.0
+mdurl==0.1.2
+pydantic==2.13.5
+pydantic-core==2.46.5
+pygments==2.21.0
+python-dotenv==1.2.4
+rich==15.0.0
+shellingham==1.5.4
+typing-extensions==4.16.0
+typing-inspection==0.4.4
+tzlocal==5.4.4
+# Windows only:
+colorama==0.4.6 ; platform_system == "Windows"
+tzdata==2026.4 ; platform_system == "Windows"

@@ -1,0 +1,12 @@
+{
+  "description": "Canned CSV export for the csv-report example job. The body is in csv-report-orders.csv.",
+  "routes": [
+    {
+      "method": "GET",
+      "url": "https://example.com/exports/orders.csv",
+      "status": 200,
+      "headers": {"content-type": "text/csv; charset=utf-8"},
+      "body_file": "csv-report-orders.csv"
+    }
+  ]
+}

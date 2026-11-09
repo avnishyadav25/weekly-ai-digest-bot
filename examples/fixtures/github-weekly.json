@@ -1,0 +1,29 @@
+{
+  "description": "Canned GitHub API responses for the github-weekly example job (closed pull requests, newest update first).",
+  "routes": [
+    {
+      "method": "GET",
+      "url": "https://api.github.com/repos/your-org/your-repo/pulls",
+      "status": 200,
+      "json": [
+        {"number": 42, "title": "Add retry with backoff to the export client", "html_url": "https://github.com/your-org/your-repo/pull/42",
+         "user": {"login": "dev-one"}, "updated_at": "{{now-1d}}", "merged_at": "{{now-1d}}"},
+        {"number": 41, "title": "Close the stale draft", "html_url": "https://github.com/your-org/your-repo/pull/41",
+         "user": {"login": "dev-two"}, "updated_at": "{{now-2d}}", "merged_at": null},
+        {"number": 40, "title": "Fix the time zone in the weekly report", "html_url": "https://github.com/your-org/your-repo/pull/40",
+         "user": {"login": "dev-two"}, "updated_at": "{{now-4d}}", "merged_at": "{{now-4d}}"},
+        {"number": 37, "title": "Older change outside the window", "html_url": "https://github.com/your-org/your-repo/pull/37",
+         "user": {"login": "dev-one"}, "updated_at": "{{now-12d}}", "merged_at": "{{now-12d}}"}
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "https://api.github.com/repos/your-org/another-repo/pulls",
+      "status": 200,
+      "json": [
+        {"number": 7, "title": "Document the deploy recipes", "html_url": "https://github.com/your-org/another-repo/pull/7",
+         "user": {"login": "dev-three"}, "updated_at": "{{now-2d}}", "merged_at": "{{now-2d}}"}
+      ]
+    }
+  ]
+}

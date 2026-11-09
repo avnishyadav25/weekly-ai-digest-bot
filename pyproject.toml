@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "automation"
+version = "1.0.0"
+description = "Scheduled Python jobs with a CLI, retries, state, alerts and tests."
+requires-python = ">=3.11"
+# Ranges here; exact pins live in requirements.txt (runtime) and requirements-dev.txt (tests and lint).
+dependencies = [
+    "apscheduler>=3.11,<4",
+    "httpx>=0.28,<1",
+    "pydantic-settings>=2.15,<3",
+    "tenacity>=9.1,<10",
+    "typer>=0.27,<1",
+]
+
+[project.scripts]
+automation = "automation.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/automation"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The project lives under ~/Desktop, which macOS marks hidden in places; Python 3.14 then skips the editable
+# install's .pth file, so tests import from src directly.
+pythonpath = ["src", "."]
+addopts = "-ra --strict-markers"
+filterwarnings = ["error"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+src = ["src", "tests"]
+extend-exclude = ["state"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "C4", "RUF", "S"]
+ignore = [
+    "E501",  # ruff format keeps code within line-length; long strings and URLs may run over
+    "S101",  # assert is how pytest works
+    "S311",  # random is used for retry jitter, not for security
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S108"]

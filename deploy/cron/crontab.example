@@ -1,0 +1,11 @@
+# crontab entries for the automation project. Install with "crontab -e" and paste the lines you want.
+# Replace /home/you/automation with your project folder. cron uses the machine's time zone for these lines;
+# the job schedules in config.toml use [timezone] from the config.
+SHELL=/bin/sh
+
+# Every minute: run whichever jobs are due according to their schedules in config.toml.
+* * * * * cd /home/you/automation && mkdir -p state && .venv/bin/automation schedule --once >> state/cron.txt 2>&1
+
+# Or run single jobs on cron's own schedule (then leave "schedule" out of their [jobs.<name>] sections):
+# */5 * * * * cd /home/you/automation && mkdir -p state && .venv/bin/automation run uptime-check >> state/cron.txt 2>&1
+# 0 7 * * *   cd /home/you/automation && mkdir -p state && .venv/bin/automation run rss-digest >> state/cron.txt 2>&1

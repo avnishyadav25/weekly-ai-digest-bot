@@ -1,0 +1,27 @@
+# Runs the jobs that are due, once, then exits. Started every minute by automation.timer.
+# Install (as root), assuming the project lives in /opt/automation with its virtualenv in .venv
+# and is owned by a user named "automation":
+#   cp deploy/systemd/automation.service deploy/systemd/automation.timer /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now automation.timer
+#   journalctl -u automation.service -f        # the JSON log lines
+# Secrets: /opt/automation/.env (chmod 600, owned by the automation user) is read by the app itself.
+
+[Unit]
+Description=Run due automation jobs (automation schedule --once)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=automation
+Group=automation
+WorkingDirectory=/opt/automation
+ExecStart=/opt/automation/.venv/bin/automation schedule --once
+# A oneshot unit never runs twice at once: a tick that arrives while this one runs is skipped.
+TimeoutStartSec=55min
+# Hardening: the project is read-only except its state folder.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/automation/state

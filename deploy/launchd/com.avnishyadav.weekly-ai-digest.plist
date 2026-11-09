@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Weekly AI digest: every 15 minutes while you are logged in, runs the jobs that are due ("schedule --once").
+  The digest is due Mondays 07:00 IST; if the Mac was asleep then, it goes out on the next check after waking.
+  Install (once):
+    mkdir -p "/Users/avnishyadav2561995gmail.com/Desktop/Workspace/avnishyadav25/weekly-ai-digest-bot/state"
+    cp deploy/launchd/com.avnishyadav.weekly-ai-digest.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.avnishyadav.weekly-ai-digest.plist
+  Stop:  launchctl bootout gui/$(id -u)/com.avnishyadav.weekly-ai-digest
+  PYTHONPATH=src: macOS marks files under Desktop hidden, and Python 3.14 then skips the editable install's .pth.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.avnishyadav.weekly-ai-digest</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/avnishyadav2561995gmail.com/Desktop/Workspace/avnishyadav25/weekly-ai-digest-bot/.venv/bin/python</string>
+        <string>-m</string>
+        <string>automation</string>
+        <string>schedule</string>
+        <string>--once</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PYTHONPATH</key>
+        <string>/Users/avnishyadav2561995gmail.com/Desktop/Workspace/avnishyadav25/weekly-ai-digest-bot/src</string>
+    </dict>
+    <key>WorkingDirectory</key>
+    <string>/Users/avnishyadav2561995gmail.com/Desktop/Workspace/avnishyadav25/weekly-ai-digest-bot</string>
+    <key>StartInterval</key>
+    <integer>900</integer>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>StandardOutPath</key>
+    <string>/Users/avnishyadav2561995gmail.com/Desktop/Workspace/avnishyadav25/weekly-ai-digest-bot/state/launchd-stdout.txt</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/avnishyadav2561995gmail.com/Desktop/Workspace/avnishyadav25/weekly-ai-digest-bot/state/launchd-stderr.txt</string>
+</dict>
+</plist>

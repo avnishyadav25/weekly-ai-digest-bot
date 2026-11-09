@@ -1,0 +1,60 @@
+# Runs one job on a schedule in GitHub Actions. Copy to .github/workflows/scheduled-job.yml in your repository,
+# commit config.toml (it holds no secrets), and add the secrets you use under
+# Settings > Secrets and variables > Actions: SLACK_WEBHOOK_URL, SMTP_PASSWORD, and GH_PAT if the job reads
+# private repositories (secret names cannot start with GITHUB_).
+# GitHub runs schedules in UTC, at most every 5 minutes, and may start them late when Actions is busy.
+# State (seen keys, uptime states, run history) is carried between runs with the Actions cache.
+name: Scheduled job
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-job
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install --no-deps .
+
+      - name: Restore state
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: state
+          key: automation-state-${{ github.run_id }}
+          restore-keys: automation-state-
+
+      - name: Run uptime-check
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: automation run uptime-check --config config.toml
+
+      - name: Save state
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: state
+          key: automation-state-${{ github.run_id }}

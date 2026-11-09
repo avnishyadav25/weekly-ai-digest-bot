@@ -1,0 +1,14 @@
+# Starts automation.service at the top of every minute; the service runs whichever jobs are due.
+# Persistent=true runs one catch-up tick after the machine was off.
+
+[Unit]
+Description=Tick for automation jobs (every minute)
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+Persistent=true
+Unit=automation.service
+
+[Install]
+WantedBy=timers.target

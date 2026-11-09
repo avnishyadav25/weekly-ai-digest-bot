@@ -1,0 +1,24 @@
+# Runs the in-process scheduler in a container.
+#   cp examples/config.example.toml config.toml   # then edit it
+#   cp .env.example .env                           # then fill in the secrets you use
+#   docker compose up -d --build
+#   docker compose logs -f automation
+#   docker compose exec automation automation state show
+services:
+  automation:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+    command: ["automation", "schedule"]
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./config.toml:/app/config.toml:ro
+      - automation-state:/app/state
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 2m
+
+volumes:
+  automation-state:

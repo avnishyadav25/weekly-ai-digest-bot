@@ -1,0 +1,12 @@
+{
+  "description": "Canned feed for the rss-digest example job. The body is in rss-digest-feed.xml.",
+  "routes": [
+    {
+      "method": "GET",
+      "url": "https://example.com/blog/feed.xml",
+      "status": 200,
+      "headers": {"content-type": "application/rss+xml; charset=utf-8"},
+      "body_file": "rss-digest-feed.xml"
+    }
+  ]
+}

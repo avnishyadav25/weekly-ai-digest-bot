@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Example Blog</title>
+    <link>https://example.com/blog/</link>
+    <description>Posts from the Example Blog (fixture for --offline).</description>
+    <item>
+      <title>Retries that do not make things worse</title>
+      <link>https://example.com/blog/retries</link>
+      <guid>https://example.com/blog/retries</guid>
+      <pubDate>{{now-1d:rfc822}}</pubDate>
+      <description>&lt;p&gt;Backoff, jitter and Retry-After, and why POST requests need care.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Idempotency keys for scheduled jobs</title>
+      <link>https://example.com/blog/idempotency</link>
+      <guid>https://example.com/blog/idempotency</guid>
+      <pubDate>{{now-3d:rfc822}}</pubDate>
+      <description>Remember what you already processed so a re-run does not repeat work.</description>
+    </item>
+    <item>
+      <title>Alert on state change, not on every check</title>
+      <link>https://example.com/blog/alerts</link>
+      <guid>https://example.com/blog/alerts</guid>
+      <pubDate>{{now-6d:rfc822}}</pubDate>
+      <description>One message when something breaks and one when it recovers.</description>
+    </item>
+  </channel>
+</rss>

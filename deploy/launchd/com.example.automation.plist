@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOS LaunchAgent: every 60 seconds while you are logged in, runs the jobs that are due
+  (the same as "automation schedule" with its once option; see ProgramArguments).
+  1. Replace /Users/you/automation with your project folder (four places) and rename the Label if you like.
+  2. mkdir -p /Users/you/automation/state   (launchd writes the two log files there)
+  3. cp deploy/launchd/com.example.automation.plist ~/Library/LaunchAgents/
+  4. launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.example.automation.plist
+  Stop it: launchctl bootout gui/$(id -u)/com.example.automation
+  launchd does not start a second copy while one is still running.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.example.automation</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/you/automation/.venv/bin/automation</string>
+        <string>schedule</string>
+        <string>--once</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/you/automation</string>
+    <key>StartInterval</key>
+    <integer>60</integer>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>StandardOutPath</key>
+    <string>/Users/you/automation/state/launchd-stdout.txt</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/you/automation/state/launchd-stderr.txt</string>
+</dict>
+</plist>

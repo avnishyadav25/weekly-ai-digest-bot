@@ -1,0 +1,11 @@
+-r requirements.txt
+# The project itself, editable, so "automation" and "python -m automation" run your working copy.
+-e .
+# Tests and lint, pinned exactly (checked on PyPI on 2026-10-01).
+pytest==9.1.1
+respx==0.23.1
+ruff==0.16.9
+# Pulled in by pytest:
+iniconfig==2.3.0
+packaging==26.3
+pluggy==1.6.0

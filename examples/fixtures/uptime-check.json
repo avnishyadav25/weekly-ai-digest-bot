@@ -1,0 +1,19 @@
+{
+  "description": "Canned responses for the uptime-check example job: one URL up, one returning 503.",
+  "routes": [
+    {
+      "method": "GET",
+      "url": "https://example.com/",
+      "status": 200,
+      "headers": {"content-type": "text/html; charset=utf-8"},
+      "body": "<!doctype html><html><head><title>Example Domain</title></head><body><h1>Example Domain</h1></body></html>"
+    },
+    {
+      "method": "GET",
+      "url": "https://status.example.com/health",
+      "status": 503,
+      "headers": {"content-type": "text/plain"},
+      "body": "service unavailable"
+    }
+  ]
+}

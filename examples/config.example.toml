@@ -1,0 +1,85 @@
+# Example configuration for the automation project.
+#
+# Copy it to config.toml (the default file name) and edit it, or pass it with --config:
+#   automation run uptime-check --dry-run --offline --config examples/config.example.toml
+#
+# Secrets never go in this file: SLACK_WEBHOOK_URL, SMTP_PASSWORD, GITHUB_TOKEN, ANTHROPIC_API_KEY and
+# OPENAI_API_KEY come from the environment or .env (see .env.example). A secret-looking key here is an error.
+# Relative paths are relative to the directory you run "automation" from.
+# Every setting is described in docs/configuration.md.
+
+timezone = "UTC"                      # IANA name; cron schedules use this zone
+fixtures_dir = "examples/fixtures"    # canned HTTP responses for --offline
+job_modules = []                      # extra modules with Job classes, e.g. ["myjobs.billing"]
+
+[log]
+level = "INFO"                        # DEBUG, INFO, WARNING, ERROR
+format = "json"                       # json (one object per line) or text
+
+[state]
+path = "state/automation.db"          # SQLite file: run history, seen keys, stored values
+
+[http]
+timeout_seconds = 10
+retries = 3                           # extra attempts on timeouts, 429 and 5xx
+backoff_seconds = 0.5                 # first wait; doubles each attempt, with jitter
+backoff_max_seconds = 30
+user_agent = "python-automation/1.0 (+https://example.com/contact)"
+
+[notify]
+default = ["console"]                 # channels for job messages: console, slack, email
+on_failure = ["console"]              # channels for "job failed" alerts, e.g. ["slack", "email"]
+repeat_failure_alert_minutes = 60     # while a job keeps failing, alert again at most this often
+
+[notify.email]
+host = "smtp.example.com"
+port = 587
+security = "starttls"                 # starttls (587), ssl (465) or none (local relay only)
+username = "alerts@example.com"       # the password comes from SMTP_PASSWORD
+sender = "Automation <alerts@example.com>"
+recipients = ["ops@example.com"]
+
+[llm]
+# Optional summaries in rss-digest (summarize = true). Off while provider is unset.
+# provider = "anthropic"              # needs ANTHROPIC_API_KEY; default model claude-opus-5-5
+# provider = "openai"                 # needs OPENAI_API_KEY; default model gpt-6-luna
+# model = "claude-opus-5-5"
+
+# One section per job: [jobs.<name>]. Common keys: enabled, schedule (cron, 5 fields), notify, max_runtime_minutes.
+
+[jobs.uptime-check]
+schedule = "*/5 * * * *"
+urls = ["https://example.com/", "https://status.example.com/health"]
+retries = 1                           # quick retry before calling a URL down
+# contains = "Example Domain"         # text the page must contain
+# notify = ["slack", "console"]
+
+[jobs.rss-digest]
+schedule = "0 7 * * *"
+feeds = ["https://example.com/blog/feed.xml"]
+max_items = 20
+title = "New posts"
+first_run = "send"                    # "skip" marks existing items as seen without sending them
+summarize = false                     # true adds an LLM summary when [llm] is configured
+
+[jobs.csv-report]
+schedule = "0 8 * * 1"
+source = "https://example.com/exports/orders.csv"   # or a file path, e.g. "exports/orders.csv"
+group_by = "region"
+sum = ["units", "revenue"]
+title = "Weekly orders by region"
+once_per = "week"                     # day, week, month or run
+# notify = ["email"]
+
+[jobs.github-weekly]
+schedule = "0 9 * * 1"
+repos = ["your-org/your-repo", "your-org/another-repo"]
+days = 7
+
+[jobs.weekly-ai-digest]
+schedule = "0 7 * * 1"
+feeds = ["https://example.com/ai/feed.xml"]
+lookback_days = 8
+summarize = false
+email_channels = ["console"]
+slack_channels = []

@@ -1,0 +1,50 @@
+# Weekly AI digest bot. Secrets (SLACK_WEBHOOK_URL, SMTP_PASSWORD, ANTHROPIC_API_KEY) live in .env only.
+# Every setting: docs/configuration.md. Try it without sending anything:
+#   automation run weekly-ai-digest --dry-run
+
+timezone = "Asia/Kolkata"             # the schedule below is Mondays 07:00 IST
+
+[log]
+level = "INFO"
+format = "text"
+
+[state]
+path = "state/automation.db"          # remembers which posts were already sent
+
+[http]
+timeout_seconds = 45                  # openai.com/news/rss.xml is a large, slow feed
+retries = 3
+user_agent = "weekly-ai-digest/1.0 (+https://avnishyadav.com)"
+
+[notify]
+default = ["console"]
+on_failure = ["email", "console"]     # a failed run emails you (and prints to the launchd log)
+
+[notify.email]
+host = "smtp.example.com"             # TODO(owner): your SMTP host
+port = 587
+security = "starttls"
+username = "you@example.com"          # TODO(owner): SMTP user; the password is SMTP_PASSWORD in .env
+sender = "Weekly AI digest <you@example.com>"   # TODO(owner)
+recipients = ["you@example.com"]      # TODO(owner)
+
+[llm]
+provider = "anthropic"                # needs ANTHROPIC_API_KEY in .env; without it the digest goes out unsummarised
+model = "claude-sonnet-5-5"
+
+[jobs.weekly-ai-digest]
+schedule = "0 7 * * 1"
+feeds = [
+  "https://openai.com/news/rss.xml",
+  "https://deepmind.google/blog/rss.xml",
+  "https://blog.google/technology/ai/rss/",
+  "https://huggingface.co/blog/feed.xml",
+  "https://engineering.salesforce.com/feed/",
+]
+# Anthropic has no RSS feed; developer.salesforce.com/blogs/feed refuses automated clients (HTTP 403).
+names = { "https://blog.google/technology/ai/rss/" = "Google AI blog" }   # the feed calls itself just "AI"
+lookback_days = 8
+max_per_source = 8
+summarize = true
+email_channels = ["email"]
+slack_channels = ["slack"]

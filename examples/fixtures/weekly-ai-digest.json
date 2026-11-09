@@ -1,0 +1,12 @@
+{
+  "description": "Canned feed for the weekly-ai-digest job (reuses the rss-digest sample feed).",
+  "routes": [
+    {
+      "method": "GET",
+      "url": "https://example.com/ai/feed.xml",
+      "status": 200,
+      "headers": {"content-type": "application/rss+xml; charset=utf-8"},
+      "body_file": "rss-digest-feed.xml"
+    }
+  ]
+}
