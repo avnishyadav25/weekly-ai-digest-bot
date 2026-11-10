@@ -64,7 +64,13 @@ macOS sets the "hidden" flag on some files under `~/Desktop` (for example when D
 skips hidden `.pth` files, which breaks the editable install. The tests (`pythonpath` in `pyproject.toml`) and the
 launchd agent (`PYTHONPATH=src`) therefore import from `src` directly. In a shell, `export PYTHONPATH=src` does the same.
 
+## Sample output
+
+[docs/sample-digest.md](docs/sample-digest.md) is a real dry run against the five feeds (no email or Slack message
+sent, no summaries because no API key was set).
+
 ## Licence
 
-The boilerplate code under `src/automation` (everything except `jobs/weekly_digest.py`) is from a paid product. Keep
-this repository private, or publish only the job, its test and the config.
+Published free by the author. The automation framework under `src/automation` comes from the
+[Python Automation Boilerplate](https://avnishyadav.com/products/python-automation-boilerplate). TODO(owner): choose a
+licence for this repository.
