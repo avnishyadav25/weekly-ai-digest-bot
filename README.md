@@ -1,7 +1,7 @@
 # Weekly AI digest bot
 
 Once a week, reads the AI news feeds I follow and sends one digest of the posts I have not seen yet: the full
-digest by email (grouped by source, with a two-or-three sentence summary per source from Claude) and a short version
+digest by email (grouped by source, with a two-or-three sentence summary per source from DeepSeek, or Claude/OpenAI) and a short version
 in Slack. Posts are remembered in a local SQLite file, so nothing is sent twice. A feed that fails is named in the
 digest and does not stop the others.
 
@@ -28,11 +28,12 @@ unhelpful.
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt -r requirements-dev.txt
-cp .env.example .env        # then fill in SMTP_PASSWORD, SLACK_WEBHOOK_URL, ANTHROPIC_API_KEY
+cp .env.example .env        # then fill in EMAIL_USER, EMAIL_PASS, SLACK_WEBHOOK_URL, DEEPSEEK_API_KEY
 ```
 
-Fill in the `TODO(owner)` lines of `[notify.email]` in `config.toml` (SMTP host, user, sender, recipients).
-Secrets only ever go in `.env`, which git ignores.
+Email goes through Gmail SMTP: `EMAIL_USER` is the Gmail address (also the sender and recipient unless
+`[notify.email]` says otherwise) and `EMAIL_PASS` a Gmail app password. Summaries use `[llm] provider = "deepseek"`
+(`DEEPSEEK_API_KEY`); `anthropic` and `openai` also work. Secrets only ever go in `.env`, which git ignores.
 
 ```bash
 export PYTHONPATH=src                                   # see "Python 3.14 on Desktop" below
@@ -42,7 +43,7 @@ export PYTHONPATH=src                                   # see "Python 3.14 on De
 .venv/bin/python -m pytest -q                            # tests, no network
 ```
 
-Without `ANTHROPIC_API_KEY` the digest still goes out, without summaries. If the Slack message fails (no webhook, or
+Without the LLM key the digest still goes out, without summaries. If the Slack message fails (no webhook, or
 Slack is down), the email still counts as sent, the run summary says "Slack summary failed", and nothing is sent twice.
 Set `slack_channels = []` to send email only.
 

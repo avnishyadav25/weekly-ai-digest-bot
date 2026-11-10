@@ -114,3 +114,31 @@ def test_a_failed_slack_summary_never_resends_the_email(make_settings, make_serv
     assert run_job(services, "weekly-ai-digest", now=NOW).summary == "1 new item sent; Slack summary failed"
     assert run_job(services, "weekly-ai-digest", now=NOW).summary == "no new items"
     assert len(recorders["email"].messages) == 1
+
+
+def test_email_user_and_pass_fill_the_gmail_settings(make_settings):
+    from automation.notify import build_notifiers
+
+    settings = make_settings('[notify.email]\nhost = "smtp.gmail.com"\n')
+    secrets = Secrets(_env_file=None, EMAIL_USER="me@example.com", EMAIL_PASS="app-" + "password")
+    email = build_notifiers(settings, secrets, http=None)["email"]
+    assert email.configured() == (True, "smtp.gmail.com:587 (starttls) to me@example.com")
+    assert (email.settings.username, email.settings.sender) == ("me@example.com", "me@example.com")
+
+
+@respx.mock
+def test_deepseek_summaries(make_settings, make_services, recorders):
+    from automation.llm import DEEPSEEK_URL
+
+    respx.get(A).mock(return_value=httpx.Response(200, text=feed("Alpha", ("a1", RECENT))))
+    respx.get(B).mock(return_value=httpx.Response(200, text=feed("Beta")))
+    llm = respx.post(DEEPSEEK_URL).mock(
+        return_value=httpx.Response(
+            200, json={"choices": [{"message": {"content": "Alpha news."}, "finish_reason": "stop"}]}
+        )
+    )
+    config = f'[llm]\nprovider = "deepseek"\n[jobs.weekly-ai-digest]\nfeeds = ["{A}", "{B}"]\n'
+    secrets = Secrets(_env_file=None, DEEPSEEK_API_KEY="test-" + "key")
+    run_job(make_services(make_settings(config), secrets=secrets), "weekly-ai-digest", now=NOW)
+    assert llm.calls.last.request.headers["authorization"] == "Bearer test-key"
+    assert "## Alpha (1 new)\nAlpha news." in recorders["email"].messages[0].text

@@ -17,7 +17,16 @@ from contextvars import ContextVar
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, SecretStr, ValidationError, field_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    SecretStr,
+    ValidationError,
+    field_validator,
+)
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -34,6 +43,11 @@ SMTP_PASSWORD = "SMTP_PASSWORD"  # noqa: S105  (the name of a variable, not a pa
 GITHUB_TOKEN = "GITHUB_TOKEN"  # noqa: S105  (the name of a variable, not a token)
 ANTHROPIC_API_KEY = "ANTHROPIC_API_KEY"
 OPENAI_API_KEY = "OPENAI_API_KEY"
+DEEPSEEK_API_KEY = "DEEPSEEK_API_KEY"
+# The names avnishyadav.com uses for its Gmail fallback: EMAIL_PASS works as SMTP_PASSWORD, and EMAIL_USER fills in
+# [notify.email] username, sender and recipients when the config leaves them empty.
+EMAIL_USER = "EMAIL_USER"
+EMAIL_PASS = "EMAIL_PASS"  # noqa: S105  (the name of a variable, not a password)
 
 DEFAULT_CONFIG_FILE = Path("config.toml")
 DEFAULT_ENV_FILE = Path(".env")
@@ -101,7 +115,7 @@ class NotifySettings(_Section):
 
 
 class LlmSettings(_Section):
-    provider: Literal["anthropic", "openai"] | None = None
+    provider: Literal["anthropic", "openai", "deepseek"] | None = None
     model: str | None = None
     max_tokens: int = Field(default=16000, gt=0)
     effort: Literal["low", "medium", "high", "xhigh", "max", "none"] = "low"  # "none": leave it out
@@ -172,10 +186,14 @@ class Secrets(BaseSettings):
     model_config = SettingsConfigDict(env_file=DEFAULT_ENV_FILE, env_ignore_empty=True, extra="ignore")
 
     slack_webhook_url: SecretStr | None = Field(default=None, validation_alias=SLACK_WEBHOOK_URL)
-    smtp_password: SecretStr | None = Field(default=None, validation_alias=SMTP_PASSWORD)
+    smtp_password: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices(SMTP_PASSWORD, EMAIL_PASS)
+    )
+    email_user: str | None = Field(default=None, validation_alias=EMAIL_USER)
     github_token: SecretStr | None = Field(default=None, validation_alias=GITHUB_TOKEN)
     anthropic_api_key: SecretStr | None = Field(default=None, validation_alias=ANTHROPIC_API_KEY)
     openai_api_key: SecretStr | None = Field(default=None, validation_alias=OPENAI_API_KEY)
+    deepseek_api_key: SecretStr | None = Field(default=None, validation_alias=DEEPSEEK_API_KEY)
 
 
 class _Locator(BaseSettings):

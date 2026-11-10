@@ -1,5 +1,5 @@
 """Optional text summaries through the Anthropic or OpenAI HTTP API. Off unless ``[llm] provider`` is set and the
-matching key (``ANTHROPIC_API_KEY`` or ``OPENAI_API_KEY``) is in the environment.
+matching key (``ANTHROPIC_API_KEY``, ``OPENAI_API_KEY`` or ``DEEPSEEK_API_KEY``) is in the environment.
 
 API details checked against the vendors' documentation on 2026-10-01:
 
@@ -32,7 +32,8 @@ ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_VERSION = "2023-06-01"
 ANTHROPIC_FALLBACK_BETA = "server-side-fallback-2026-07-01"
 OPENAI_URL = "https://api.openai.com/v1/responses"
-DEFAULT_MODELS = {"anthropic": "claude-opus-5-5", "openai": "gpt-6-luna"}
+DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"  # OpenAI-style Chat Completions
+DEFAULT_MODELS = {"anthropic": "claude-opus-5-5", "openai": "gpt-6-luna", "deepseek": "deepseek-chat"}
 
 SUMMARY_SYSTEM = (
     "You summarise automated reports for a busy reader. Write plain text, no Markdown headings. "
@@ -61,7 +62,11 @@ class LlmClient:
         """A client, or None when no provider is set or its key is missing."""
         if settings.provider is None:
             return None
-        secret = secrets.anthropic_api_key if settings.provider == "anthropic" else secrets.openai_api_key
+        secret = {
+            "anthropic": secrets.anthropic_api_key,
+            "openai": secrets.openai_api_key,
+            "deepseek": secrets.deepseek_api_key,
+        }[settings.provider]
         if secret is None or not secret.get_secret_value().strip():
             return None
         return cls(settings, secret.get_secret_value(), http)
@@ -71,6 +76,8 @@ class LlmClient:
         try:
             if self.provider == "anthropic":
                 return self._anthropic(system, prompt)
+            if self.provider == "deepseek":
+                return self._deepseek(system, prompt)
             return self._openai(system, prompt)
         except httpx.HTTPStatusError as exc:
             detail = exc.response.text[:300]
@@ -116,6 +123,22 @@ class LlmClient:
             log.warning("llm output cut at max_tokens", extra={"model": self.model})
         if not text:
             raise LlmError(f"no text in the response (stop_reason {stop})")
+        return text
+
+    def _deepseek(self, system: str, prompt: str) -> str:
+        body = {
+            "model": self.model,
+            "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
+            "max_tokens": min(self.settings.max_tokens, 8192),  # deepseek-chat caps output at 8K tokens
+        }
+        headers = {"authorization": f"Bearer {self._key}", "content-type": "application/json"}
+        data = self._http.post(
+            DEEPSEEK_URL, json=body, headers=headers, retry_unsafe=True, timeout=self.settings.timeout_seconds
+        ).json()
+        choice = (data.get("choices") or [{}])[0]
+        text = ((choice.get("message") or {}).get("content") or "").strip()
+        if not text:
+            raise LlmError(f"deepseek returned no text (finish_reason {choice.get('finish_reason')!r})")
         return text
 
     def _openai(self, system: str, prompt: str) -> str:

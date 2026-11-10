@@ -454,7 +454,7 @@ def doctor(
         if llm.provider is None:
             checks.append(("off", "llm", "[llm] provider not set (summaries off)"))
         elif LlmClient.from_settings(llm, secrets, http) is None:
-            key = "ANTHROPIC_API_KEY" if llm.provider == "anthropic" else "OPENAI_API_KEY"
+            key = f"{llm.provider.upper()}_API_KEY"
             checks.append(("warn", "llm", f"{llm.provider}: set {key}"))
         else:
             checks.append(("ok", "llm", f"{llm.provider}, model {llm.model or DEFAULT_MODELS[llm.provider]}"))

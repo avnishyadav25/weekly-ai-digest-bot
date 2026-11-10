@@ -21,18 +21,15 @@ default = ["console"]
 on_failure = ["email", "console"]     # a failed run emails you (and prints to the launchd log)
 
 [notify.email]
-# Resend's SMTP gateway (the same Resend account and verified domain as avnishyadav.com).
-# SMTP_PASSWORD in .env is a Resend API key with "Sending access".
-host = "smtp.resend.com"
+# Gmail SMTP with the same EMAIL_USER / EMAIL_PASS (a Gmail app password) as avnishyadav.com's fallback mailer.
+# username, sender and recipients default to EMAIL_USER; set them here to send elsewhere.
+host = "smtp.gmail.com"
 port = 587
 security = "starttls"
-username = "resend"
-sender = "Weekly AI digest <hello@avnishyadav.com>"
-recipients = ["hello@avnishyadav.com"]
 
 [llm]
-provider = "anthropic"                # needs ANTHROPIC_API_KEY in .env; without it the digest goes out unsummarised
-model = "claude-sonnet-5-5"
+provider = "deepseek"                 # needs DEEPSEEK_API_KEY in .env; without it the digest goes out unsummarised
+model = "deepseek-chat"
 
 [jobs.weekly-ai-digest]
 schedule = "0 7 * * 1"
