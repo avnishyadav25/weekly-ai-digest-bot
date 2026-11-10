@@ -21,12 +21,14 @@ default = ["console"]
 on_failure = ["email", "console"]     # a failed run emails you (and prints to the launchd log)
 
 [notify.email]
-host = "smtp.example.com"             # TODO(owner): your SMTP host
+# Resend's SMTP gateway (the same Resend account and verified domain as avnishyadav.com).
+# SMTP_PASSWORD in .env is a Resend API key with "Sending access".
+host = "smtp.resend.com"
 port = 587
 security = "starttls"
-username = "you@example.com"          # TODO(owner): SMTP user; the password is SMTP_PASSWORD in .env
-sender = "Weekly AI digest <you@example.com>"   # TODO(owner)
-recipients = ["you@example.com"]      # TODO(owner)
+username = "resend"
+sender = "Weekly AI digest <hello@avnishyadav.com>"
+recipients = ["hello@avnishyadav.com"]
 
 [llm]
 provider = "anthropic"                # needs ANTHROPIC_API_KEY in .env; without it the digest goes out unsummarised

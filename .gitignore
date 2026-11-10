@@ -8,3 +8,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
+
+# Local env overrides and Salesforce CLI/editor state
+.env.*
+!.env.example
+.sf/
