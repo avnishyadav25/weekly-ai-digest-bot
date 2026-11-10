@@ -67,8 +67,17 @@ launchd agent (`PYTHONPATH=src`) therefore import from `src` directly. In a shel
 
 ## Sample output
 
-[docs/sample-digest.md](docs/sample-digest.md) is a real dry run against the five feeds (no email or Slack message
-sent, no summaries because no API key was set).
+The first real run (2026-11-10) found 47 new posts from the five feeds and sent one email and one Slack message.
+
+The email: every source with its DeepSeek summary and up to eight links.
+
+![The weekly digest email: five sources, each with a summary and its links](docs/images/digest-email.png)
+
+The Slack message: one line per source, pointing to the email.
+
+![The Slack summary: one line per source and the item count](docs/images/digest-slack.png)
+
+[docs/sample-digest.md](docs/sample-digest.md) is an earlier dry run as plain text (nothing sent, no summaries).
 
 ## Licence
 
