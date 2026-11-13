@@ -142,3 +142,40 @@ def test_deepseek_summaries(make_settings, make_services, recorders):
     run_job(make_services(make_settings(config), secrets=secrets), "weekly-ai-digest", now=NOW)
     assert llm.calls.last.request.headers["authorization"] == "Bearer test-key"
     assert "## Alpha (1 new)\nAlpha news." in recorders["email"].messages[0].text
+
+
+@respx.mock
+def test_the_same_title_from_two_sources_is_listed_once(make_settings, make_services, recorders):
+    respx.get(A).mock(return_value=httpx.Response(200, text=feed("Alpha", ("a1", RECENT))))
+    respx.get(B).mock(return_value=httpx.Response(200, text=feed("Beta", ("a1", RECENT), ("b1", RECENT))))
+    services = services_for(make_settings, make_services, "summarize = false\n")
+
+    assert run_job(services, "weekly-ai-digest", now=NOW).summary == "2 new items sent"
+    (email,) = recorders["email"].messages
+    assert email.text.count("Post a1") == 1 and "- Post a1 (also on Beta)" in email.text
+    assert "## Alpha (1 new)" in email.text and "## Beta (1 new)" in email.text
+    assert "(also on Beta)</small>" in email.html
+    # the dropped duplicate still counts as sent
+    assert run_job(services, "weekly-ai-digest", now=NOW).summary == "no new items"
+
+
+def test_a_source_left_empty_by_merging_is_dropped():
+    from datetime import UTC, datetime
+
+    from automation.integrations.rss import FeedItem
+    from automation.jobs.weekly_digest import merge_duplicates
+
+    item = lambda t: FeedItem(id=t, title=t, link=None, published=datetime(2026, 9, 29, tzinfo=UTC))  # noqa: E731
+    groups = {"DeepMind": [item("Gemini 3 is here")], "Google AI": [item("Gemini 3 is here!")]}
+    assert merge_duplicates(groups) == {"gemini 3 is here": ["Google AI"]}
+    assert list(groups) == ["DeepMind"]
+
+
+def test_a_summary_that_comes_back_as_a_list_becomes_one_paragraph():
+    from automation.jobs.weekly_digest import as_prose
+
+    assert as_prose("- New model released\n* Faster API\n1. Cheaper tier.") == (
+        "New model released. Faster API. Cheaper tier."
+    )
+    assert as_prose("  Two sentences here. Nothing to change.  ") == "Two sentences here. Nothing to change."
+    assert as_prose("Line one\nline two") == "Line one\nline two"  # prose with a line break is left alone

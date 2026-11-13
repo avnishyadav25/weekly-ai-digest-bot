@@ -8,6 +8,7 @@ repeats them; a feed that fails is reported in the digest and does not stop the 
 from __future__ import annotations
 
 import html
+import re
 from datetime import UTC, datetime, timedelta
 
 from pydantic import Field
@@ -20,8 +21,47 @@ from automation.notify import Message, NotifyError
 _OLDEST = datetime.min.replace(tzinfo=UTC)
 SOURCE_PROMPT = (
     "These are this week's new posts from {source}. In two or three sentences, say what they announce or cover. "
-    "Use only the titles and descriptions given; do not add facts, numbers or opinions."
+    "Use only the titles and descriptions given; do not add facts, numbers or opinions. "
+    "Answer in plain sentences, not a list."
 )
+_BULLET = re.compile(r"^\s*(?:[-*\u2022]|\d+[.)])\s+")
+
+
+def title_key(title: str) -> str:
+    """Case, punctuation and spacing don't make two announcements different."""
+    return " ".join(re.sub(r"[^\w\s]", " ", title.casefold()).split())
+
+
+def as_prose(text: str) -> str:
+    """A summary that came back as a list becomes one paragraph (Slack shows only the first line)."""
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if not any(_BULLET.match(ln) for ln in lines):
+        return text.strip()
+    parts = [_BULLET.sub("", ln).strip() for ln in lines]
+    return " ".join(p if p[-1] in ".!?" else p + "." for p in parts if p)
+
+
+def merge_duplicates(groups: dict[str, list[FeedItem]]) -> dict[str, list[str]]:
+    """Keep each title once, under the first source (config order); returns title key -> the other sources.
+
+    Groups left empty are removed. The dropped items stay in the run's keys, so they are still marked sent.
+    """
+    first: dict[str, str] = {}
+    also: dict[str, list[str]] = {}
+    for source in list(groups):
+        kept = []
+        for item in groups[source]:
+            key = title_key(item.title)
+            if key in first and first[key] != source:
+                also.setdefault(key, []).append(source)
+            else:
+                first.setdefault(key, source)
+                kept.append(item)
+        if kept:
+            groups[source] = kept
+        else:
+            del groups[source]
+    return also
 
 
 class WeeklyDigestConfig(JobConfig):
@@ -69,6 +109,7 @@ class WeeklyDigest(Job[WeeklyDigestConfig]):
                 groups.setdefault(cfg.names.get(url) or feed.title or url, []).extend(items)
                 keys.extend(new)
 
+        also = merge_duplicates(groups)
         if not groups:
             note = f"; {len(failed)} feed(s) failed" if failed else ""
             return Result(summary=f"no new items{note}", data={"new": 0, "failed": failed})
@@ -80,8 +121,8 @@ class WeeklyDigest(Job[WeeklyDigestConfig]):
         ctx.notify.send(
             Message(
                 title=title,
-                text=self.full_text(cfg, groups, summaries, failed),
-                html=self.full_html(cfg, groups, summaries, failed),
+                text=self.full_text(cfg, groups, summaries, failed, also),
+                html=self.full_html(cfg, groups, summaries, failed, also),
             ),
             channels=cfg.email_channels,
         )
@@ -109,19 +150,28 @@ class WeeklyDigest(Job[WeeklyDigestConfig]):
             return None
         listing = "\n".join(f"- {i.title}: {i.summary}" for i in items[: ctx.config.max_per_source])
         try:
-            return ctx.llm.summarize(listing, instruction=SOURCE_PROMPT.format(source=source)).strip()
+            return as_prose(ctx.llm.summarize(listing, instruction=SOURCE_PROMPT.format(source=source)))
         except LlmError as exc:  # a summary is a nice-to-have; the digest still goes out
             ctx.log.warning("summary failed", extra={"source": source, "error": str(exc)})
             return None
 
     @staticmethod
-    def full_text(cfg, groups, summaries, failed) -> str:
+    def full_text(cfg, groups, summaries, failed, also=None) -> str:
+        also = also or {}
+
+        def tail(i):
+            others = also.get(title_key(i.title))
+            return f" (also on {', '.join(others)})" if others else ""
+
         out = []
         for source, items in groups.items():
             out.append(f"## {source} ({len(items)} new)")
             if summaries.get(source):
                 out.append(summaries[source])
-            out += [f"- {i.title}" + (f"\n  {i.link}" if i.link else "") for i in items[: cfg.max_per_source]]
+            out += [
+                f"- {i.title}{tail(i)}" + (f"\n  {i.link}" if i.link else "")
+                for i in items[: cfg.max_per_source]
+            ]
             if len(items) > cfg.max_per_source:
                 out.append(f"... and {len(items) - cfg.max_per_source} more")
             out.append("")
@@ -130,7 +180,8 @@ class WeeklyDigest(Job[WeeklyDigestConfig]):
         return "\n".join(out).strip()
 
     @staticmethod
-    def full_html(cfg, groups, summaries, failed) -> str:
+    def full_html(cfg, groups, summaries, failed, also=None) -> str:
+        also = also or {}
         e = html.escape
         parts = []
         for source, items in groups.items():
@@ -138,7 +189,14 @@ class WeeklyDigest(Job[WeeklyDigestConfig]):
             if summaries.get(source):
                 parts.append(f"<p>{e(summaries[source]).replace(chr(10), '<br>')}</p>")
             lis = "".join(
-                f'<li><a href="{e(i.link or "#")}">{e(i.title)}</a></li>' for i in items[: cfg.max_per_source]
+                f'<li><a href="{e(i.link or "#")}">{e(i.title)}</a>'
+                + (
+                    f" <small>(also on {e(', '.join(also[title_key(i.title)]))})</small>"
+                    if title_key(i.title) in also
+                    else ""
+                )
+                + "</li>"
+                for i in items[: cfg.max_per_source]
             )
             parts.append(f"<ul>{lis}</ul>")
             if len(items) > cfg.max_per_source:

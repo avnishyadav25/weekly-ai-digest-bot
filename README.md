@@ -9,6 +9,8 @@ Built on my [Python Automation Boilerplate](https://avnishyadav.com/products/pyt
 `src/automation/jobs/weekly_digest.py`, its tests are `tests/test_job_weekly_digest.py`, and the settings are in
 `config.toml`.
 
+How and why I built it: [the project write-up](https://avnishyadav.com/projects/weekly-ai-digest-bot).
+
 ## Feeds
 
 | Source | Feed |
@@ -47,6 +49,10 @@ Without the LLM key the digest still goes out, without summaries. If the Slack m
 Slack is down), the email still counts as sent, the run summary says "Slack summary failed", and nothing is sent twice.
 Set `slack_channels = []` to send email only.
 
+The same post title from two feeds (case and punctuation ignored) is listed once, under the first feed in
+`config.toml`, with "(also on …)". A summary that comes back as a bullet list is joined into one paragraph, so the
+Slack line carries the whole summary.
+
 ## Every Monday at 07:00 IST (launchd)
 
 ```bash
@@ -81,6 +87,6 @@ The Slack message: one line per source, pointing to the email.
 
 ## Licence
 
-Published free by the author. The automation framework under `src/automation` comes from the
-[Python Automation Boilerplate](https://avnishyadav.com/products/python-automation-boilerplate). TODO(owner): choose a
-licence for this repository.
+[MIT](LICENSE). The automation framework under `src/automation` is the
+[Python Automation Boilerplate](https://avnishyadav.com/products/python-automation-boilerplate), free under the same
+licence. Write-up: [avnishyadav.com/projects/weekly-ai-digest-bot](https://avnishyadav.com/projects/weekly-ai-digest-bot).
